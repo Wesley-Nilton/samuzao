@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Fila de Atendimento - Restaurante</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 420px;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+    }
+    th, td {
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+      padding: 8px;
+    }
+    button {
+      border: none;
+      padding: 6px 10px;
+      margin: 2px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      font-size: 16px;
+    }
+    .up { background: blue; font-size: 20px; font-weight: bold; }
+    .down { background: blue; font-size: 20px; font-weight: bold; }
+    .edit { background: dodgerblue; font-size: 20px; }
+    .delete { background: red; font-size: 20px; }
+    .add { background: blue; }
+    .next { background: red; }
+    .copy { background: green; }
+    .restore { background: gray; }
+    input {
+      width: 100%;
+      padding: 5px;
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Estilo da notificação */
+    #popup {
+      position: fixed;
+      bottom: -60px; /* começa escondido */
+      right: 20px;
+      background: #323232;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: all 0.6s ease;
+      font-size: 14px;
+      z-index: 1000;
+    }
+
+    /* Quando ativo */
+    #popup.show {
+      bottom: 20px;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Fila de Atendimento - SAMU 🚑</h2>
+    <table id="tabela">
+      <thead>
+        <tr>
+          <th>Ordem</th>
+          <th>Funcionário(a)</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="corpoTabela"></tbody>
+    </table>
+
+    <input type="text" id="saida" readonly>
+
+    <div style="margin-top:15px;">
+      <button class="restore" onclick="restaurar()">Restaurar</button>
+      <button class="add" onclick="adicionar()">Adicionar</button>
+      <button class="next" onclick="avancar()">Avançar</button>
+      <button class="copy" onclick="copiar()">Copiar</button>
+    </div>
+  </div>
+
+  <!-- Notificação popup -->
+  <div id="popup">Fila copiada!</div>
+
+  <!-- Som de notificação -->
+  <audio id="notificacaoSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
+
+  <script>
+    let fila = ["Scooty", "saci", "gabes"];
+    let filaAnterior = [...fila]; // guarda o estado anterior
+
+    function salvarEstado() {
+      filaAnterior = [...fila]; // salva antes de qualquer alteração
+    }
+
+    function renderizar() {
+      const corpo = document.getElementById("corpoTabela");
+      corpo.innerHTML = "";
+      fila.forEach((nome, i) => {
+        corpo.innerHTML += `
+          <tr>
+            <td>${i+1}</td>
+            <td>${nome}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="up" onclick="mover(${i}, -1)">⬆️</button>
+                <button class="down" onclick="mover(${i}, 1)">⬇️</button>
+                <button class="edit" onclick="editar(${i})">✏️</button>
+                <button class="delete" onclick="remover(${i})">❌</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+      document.getElementById("saida").value = ":r 🚑 " + fila.join(" - ") + "🚑";
+    }
+
+    function mover(i, dir) {
+      salvarEstado();
+      let novo = i + dir;
+      if (novo >= 0 && novo < fila.length) {
+        [fila[i], fila[novo]] = [fila[novo], fila[i]];
+        renderizar();
+      }
+    }
+
+    function remover(i) {
+      salvarEstado();
+      fila.splice(i, 1);
+      renderizar();
+    }
+
+    function editar(i) {
+      salvarEstado();
+      let novoNome = prompt("Editar nome do funcionário(a):", fila[i]);
+      if (novoNome) fila[i] = novoNome;
+      renderizar();
+    }
+
+    function adicionar() {
+      salvarEstado();
+      let nome = prompt("Digite o nome do funcionário(a):");
+      if (nome) {
+        fila.push(nome);
+        renderizar();
+      }
+    }
+
+    function avancar() {
+      salvarEstado();
+      if (fila.length > 0) {
+        fila.push(fila.shift());
+        renderizar();
+      }
+    }
+
+    function copiar() {
+      let texto = document.getElementById("saida");
+      texto.select();
+      document.execCommand("copy");
+
+      // Som de notificação
+      document.getElementById("notificacaoSound").play();
+
+      // Mostra popup
+      let popup = document.getElementById("popup");
+      popup.classList.add("show");
+
+      // Esconde depois de 5s
+      setTimeout(() => {
+        popup.classList.remove("show");
+      }, 5000);
+    }
+
+    function restaurar() {
+      let temp = [...fila];
+      fila = [...filaAnterior]; // volta ao estado anterior
+      filaAnterior = [...temp]; // permite desfazer/alternar
+      renderizar();
+    }
+
+    renderizar();
+  </script>
+</body>
+</html>
