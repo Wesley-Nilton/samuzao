@@ -299,12 +299,21 @@
             const copiarBtn = doc.getElementById("btnCopiar");
             const restaurarBtn = doc.getElementById("btnRestaurar");
             const pipBtn = doc.getElementById("pipButton");
+            const input = doc.getElementById("inputNovoFuncionario"); // NOVO
 
             if (addBtn) addBtn.onclick = () => adicionar(doc);
             if (avancarBtn) avancarBtn.onclick = () => { avancar(); };
             if (copiarBtn) copiarBtn.onclick = () => copiar(doc);
             if (restaurarBtn) restaurarBtn.onclick = () => restaurar();
             if (pipBtn) pipBtn.onclick = togglePiP;
+
+            if (input) {
+    input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            adicionar(doc);
+        }
+    });
         }
 
         // --- PiP ---
