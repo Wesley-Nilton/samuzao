@@ -1,213 +1,357 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Fila de Atendimento</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #1F74BF;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .container {
-      background: #F2F2F2;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      width: 420px;
-      text-align: center;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 10px;
-    }
-    th, td {
-      border-bottom: 1px solid #ddd;
-      text-align: center;
-      padding: 8px;
-    }
-    button {
-      border: none;
-      padding: 6px 10px;
-      margin: 2px;
-      border-radius: 6px;
-      cursor: pointer;
-      color: white;
-      font-size: 16px;
-    }
-    .up { background: blue; font-size: 20px; font-weight: bold; }
-    .down { background: blue; font-size: 20px; font-weight: bold; }
-    .edit { background: dodgerblue; font-size: 20px; }
-    .delete { background: red; font-size: 20px; }
-    .add { background: blue; }
-    .next { background: red; }
-    .copy { background: green; }
-    .restore { background: gray; }
-    input {
-      width: 100%;
-      padding: 5px;
-      margin-top: 5px;
-      text-align: center;
-    }
+    <meta charset="UTF-8">
+    <title>Fila de Atendimento - SAMU🚑</title>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/SvVHdTI.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1F74BF; /* Fundo azul bebê */
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
 
-    .action-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-    }
+        .container {
+            background: #F2F2F2;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 480px;
+            text-align: center;
+            margin: 20px auto; 
+        }
+        .container.hidden-in-main {
+            display: none !important;
+        }
 
-    /* Estilo da notificação */
-    #popup {
-      position: fixed;
-      bottom: -60px; /* começa escondido */
-      right: 20px;
-      background: #323232;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      opacity: 0;
-      transition: all 0.6s ease;
-      font-size: 14px;
-      z-index: 1000;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        th, td {
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+            padding: 8px;
+        }
+        button {
+            border: none;
+            padding: 6px 10px;
+            margin: 2px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: white;
+            font-size: 16px;
+            transition: transform 0.1s ease-out, background-color 0.1s ease-out; /* Animação ao clicar e para a cor de fundo */
+        }
+        button:active {
+            transform: scale(0.95); /* Efeito de "clique" */
+        }
 
-    /* Quando ativo */
-    #popup.show {
-      bottom: 20px;
-      opacity: 1;
-    }
-  </style>
+        /* Novas estilizações para os botões de seta */
+        .up, .down { 
+            background: blue; 
+            font-size: 20px; 
+            font-weight: bold; 
+            color: white; /* Cor branca para as setas */
+        }
+        
+        .edit { background: dodgerblue; font-size: 20px; }
+        .delete { background: red; font-size: 20px; }
+        .next { background: red; }
+        .copy { background: green; }
+        .restore { background: gray; }
+        .pip-button { background: orange; }
+        .add { background: blue; }
+
+        input[type="text"] {
+            padding: 6px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            width: calc(100% - 12px);
+        }
+        .add-section {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .footer-logo {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .footer-logo img {
+            max-width: 150px;
+            height: auto;
+            opacity: 0.7;
+        }
+
+        #popup {
+            position: fixed;
+            bottom: -60px;
+            right: 20px;
+            background: #323232;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: all 0.6s ease;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        #popup.show { bottom: 20px; opacity: 1; }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Fila de Atendimento - SAMU 🚑</h2>
-    <table id="tabela">
-      <thead>
-        <tr>
-          <th>Ordem</th>
-          <th>Funcionário(a)</th>
-          <th>Ação</th>
-        </tr>
-      </thead>
-      <tbody id="corpoTabela"></tbody>
-    </table>
+    <div class="container" id="draggableContainer">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+            <button class="pip-button" id="pipButton">PiP Externo 🖼️</button>
+        </div>
+        <hr>
+        
+        <div id="queueContent">
+            <h2>Ordem da fila: SAMU🚑</h2>
+            <table id="tabela">
+                <thead>
+                    <tr>
+                        <th>Prioridade</th>
+                        <th>Funcionário</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela"></tbody>
+            </table>
 
-    <input type="text" id="saida" readonly>
+            <input type="text" id="saida" readonly>
 
-    <div style="margin-top:15px;">
-      <button class="restore" onclick="restaurar()">Restaurar</button>
-      <button class="add" onclick="adicionar()">Adicionar</button>
-      <button class="next" onclick="avancar()">Avançar</button>
-      <button class="copy" onclick="copiar()">Copiar</button>
+            <div style="margin-top:15px;">
+                <button class="restore" id="btnRestaurar">Restaurar</button>
+                <button class="next" id="btnAvancar">Avançar</button>
+                <button class="copy" id="btnCopiar">Copiar</button>
+            </div>
+
+            <div class="add-section">
+                <input type="text" id="inputNovoFuncionario" placeholder="Digite o nick">
+                <button class="add" id="btnAdicionar">Adicionar</button>
+            </div>
+        </div>
+
+        <div class="footer-logo">
+            <img src="https://i.imgur.com/DgK7zg0.png" alt="Logo SAMU">
+        </div>
     </div>
-  </div>
 
-  <!-- Notificação popup -->
-  <div id="popup">Fila copiada!</div>
+    <div id="popup">Fila copiada!</div>
+    <audio id="notificacaoSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
-  <!-- Som de notificação -->
-  <audio id="notificacaoSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
+    <script>
+        let fila = ["wes", "le", "unloved"];
+        let filaAnterior = [...fila];
+        let pipWindow = null;
+        const draggableContainer = document.getElementById("draggableContainer");
+        const queueContent = document.getElementById("queueContent");
+        let isPiPActive = false;
 
-  <script>
-    let fila = ["le", "wes", "broken"];
-    let filaAnterior = [...fila]; // guarda o estado anterior
+        function salvarEstado() { filaAnterior = [...fila]; }
 
-    function salvarEstado() {
-      filaAnterior = [...fila]; // salva antes de qualquer alteração
-    }
+        // Retorna a janela (window) correta: PiP se ativo, ou a principal (window)
+        function getTargetWindow() {
+            return isPiPActive && pipWindow ? pipWindow : window;
+        }
+        
+        // renderizar aceita o document alvo
+        function renderizar(doc = isPiPActive && pipWindow ? pipWindow.document : document) {
+            const corpo = doc.getElementById("corpoTabela");
+            corpo.innerHTML = "";
+            fila.forEach((nome, i) => {
+                corpo.innerHTML += `
+                    <tr>
+                        <td>${i+1}</td>
+                        <td>${nome}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="up" data-action="moverUp" data-index="${i}">↥</button>
+                                <button class="down" data-action="moverDown" data-index="${i}">↧</button>
+                                <button class="edit" data-action="editar" data-index="${i}">✏️</button>
+                                <button class="delete" data-action="remover" data-index="${i}">❌</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            doc.getElementById("saida").value = ":r [FILA] " + fila.join(" - ");
+            rebindEvents(doc);
+        }
 
-    function renderizar() {
-      const corpo = document.getElementById("corpoTabela");
-      corpo.innerHTML = "";
-      fila.forEach((nome, i) => {
-        corpo.innerHTML += `
-          <tr>
-            <td>${i+1}</td>
-            <td>${nome}</td>
-            <td>
-              <div class="action-buttons">
-                <button class="up" onclick="mover(${i}, -1)">⬆️</button>
-                <button class="down" onclick="mover(${i}, 1)">⬇️</button>
-                <button class="edit" onclick="editar(${i})">✏️</button>
-                <button class="delete" onclick="remover(${i})">❌</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      });
-      document.getElementById("saida").value = ":r " + fila.join(" - ");
-    }
+        function mover(i, dir) {
+            salvarEstado();
+            let novo = i + dir;
+            if (novo >= 0 && novo < fila.length) {
+                [fila[i], fila[novo]] = [fila[novo], fila[i]];
+                renderizar();
+            }
+        }
+        function remover(i) { salvarEstado(); fila.splice(i, 1); renderizar(); }
+        
+        // **Função editar alterada para usar a janela (window) alvo**
+        function editar(i, win = window) { 
+            salvarEstado(); 
+            let novoNome = win.prompt("Editar nome:", fila[i]); 
+            if (novoNome) fila[i] = novoNome; 
+            renderizar(); 
+        }
 
-    function mover(i, dir) {
-      salvarEstado();
-      let novo = i + dir;
-      if (novo >= 0 && novo < fila.length) {
-        [fila[i], fila[novo]] = [fila[novo], fila[i]];
+        function adicionar(doc = isPiPActive && pipWindow ? pipWindow.document : document) { 
+            salvarEstado();
+            let nome = doc.getElementById("inputNovoFuncionario").value.trim();
+            if (nome) {
+                fila.push(nome);
+                doc.getElementById("inputNovoFuncionario").value = "";
+                renderizar(); 
+            }
+        }
+        function avancar() { salvarEstado(); if (fila.length > 0) { fila.push(fila.shift()); renderizar(); } }
+
+        // copiar agora aceita um doc e tenta navigator.clipboard do window daquele doc,
+        // com fallback para execCommand se necessário.
+        function copiar(doc = isPiPActive && pipWindow ? pipWindow.document : document) {
+            const win = doc.defaultView || window;
+            const texto = doc.getElementById("saida").value;
+            const clipboard = win.navigator && win.navigator.clipboard;
+
+            function showMainPopup() {
+                try {
+                    document.getElementById("notificacaoSound").play();
+                } catch(e){}
+                const popup = document.getElementById("popup");
+                if (popup) {
+                    popup.classList.add("show");
+                    setTimeout(() => popup.classList.remove("show"), 3000);
+                }
+            }
+
+            function fallbackCopy(textoLocal, docLocal) {
+                try {
+                    const ta = docLocal.createElement('textarea');
+                    ta.value = textoLocal;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    docLocal.body.appendChild(ta);
+                    ta.select();
+                    const winLocal = docLocal.defaultView || window;
+                    const success = winLocal.document.execCommand && winLocal.document.execCommand('copy');
+                    docLocal.body.removeChild(ta);
+                    if (success) {
+                        showMainPopup();
+                    } else {
+                        alert("Erro ao copiar");
+                    }
+                } catch (e) {
+                    alert("Erro ao copiar");
+                }
+            }
+
+            if (clipboard && typeof clipboard.writeText === 'function') {
+                clipboard.writeText(texto).then(() => {
+                    showMainPopup();
+                }).catch(() => {
+                    fallbackCopy(texto, doc);
+                });
+            } else {
+                fallbackCopy(texto, doc);
+            }
+        }
+
+        function restaurar() { let temp = [...fila]; fila = [...filaAnterior]; filaAnterior = [...temp]; renderizar(); }
+
+        // Rebind de eventos sempre após renderizar
+        function rebindEvents(doc = isPiPActive && pipWindow ? pipWindow.document : document) {
+            const currentWin = doc.defaultView || window; // Obter a janela do documento atual
+
+            doc.querySelectorAll("[data-action]").forEach(btn => {
+                btn.onclick = () => {
+                    let i = parseInt(btn.dataset.index);
+                    switch (btn.dataset.action) {
+                        case "moverUp": mover(i, -1); break;
+                        case "moverDown": mover(i, 1); break;
+                        case "editar": editar(i, currentWin); break; // **Passando a janela correta aqui**
+                        case "remover": remover(i); break;
+                    }
+                };
+            });
+        }
+
+        // Botões principais: sempre passa o doc alvo ao handler via wrapper
+        function bindMainButtons(doc) {
+            const addBtn = doc.getElementById("btnAdicionar");
+            const avancarBtn = doc.getElementById("btnAvancar");
+            const copiarBtn = doc.getElementById("btnCopiar");
+            const restaurarBtn = doc.getElementById("btnRestaurar");
+            const pipBtn = doc.getElementById("pipButton");
+
+            if (addBtn) addBtn.onclick = () => adicionar(doc);
+            if (avancarBtn) avancarBtn.onclick = () => { avancar(); };
+            if (copiarBtn) copiarBtn.onclick = () => copiar(doc);
+            if (restaurarBtn) restaurarBtn.onclick = () => restaurar();
+            if (pipBtn) pipBtn.onclick = togglePiP;
+        }
+
+        // --- PiP ---
+        async function openPiP() {
+            try {
+                pipWindow = await documentPictureInPicture.requestWindow({ width: 480, height: 520 });
+            } catch (e) { alert("Erro PiP"); return; }
+
+            // Copia o conteúdo (innerHTML) para o PiP
+            pipWindow.document.body.innerHTML = `
+                <div id="queueContent">${queueContent.innerHTML}</div>
+                <div class="footer-logo"><img src="https://i.imgur.com/DgK7zg0.png"></div>
+            `;
+            
+            // Copia os estilos
+            const style = document.createElement('style');
+            style.textContent = document.querySelector('style').textContent;
+            
+            // Adiciona um estilo local para forçar o fundo do body do PiP a ser branco
+            const pipBodyStyle = `body { background: white !important; }`;
+            style.textContent += pipBodyStyle; 
+            
+            pipWindow.document.head.appendChild(style);
+
+            draggableContainer.classList.add('hidden-in-main');
+            isPiPActive = true;
+            document.getElementById("pipButton").textContent = "Voltar para Aba ↩️";
+            pipWindow.addEventListener('pagehide', closePiP);
+
+            // rebind no doc do PiP
+            bindMainButtons(pipWindow.document);
+            renderizar(); // renderiza no contexto correto
+        }
+        function closePiP() {
+            if (!pipWindow) return;
+            draggableContainer.classList.remove('hidden-in-main');
+            pipWindow.close(); pipWindow = null;
+            isPiPActive = false;
+            document.getElementById("pipButton").textContent = "PiP Externo 🖼️";
+            bindMainButtons(document);
+            renderizar();
+        }
+        function togglePiP() { pipWindow ? closePiP() : openPiP(); }
+
+        // Inicialização
+        bindMainButtons(document);
         renderizar();
-      }
-    }
-
-    function remover(i) {
-      salvarEstado();
-      fila.splice(i, 1);
-      renderizar();
-    }
-
-    function editar(i) {
-      salvarEstado();
-      let novoNome = prompt("Editar nome do funcionário(a):", fila[i]);
-      if (novoNome) fila[i] = novoNome;
-      renderizar();
-    }
-
-    function adicionar() {
-      salvarEstado();
-      let nome = prompt("Digite o nome do funcionário(a):");
-      if (nome) {
-        fila.push(nome);
-        renderizar();
-      }
-    }
-
-    function avancar() {
-      salvarEstado();
-      if (fila.length > 0) {
-        fila.push(fila.shift());
-        renderizar();
-      }
-    }
-
-    function copiar() {
-      let texto = document.getElementById("saida");
-      texto.select();
-      document.execCommand("copy");
-
-      // Som de notificação
-      document.getElementById("notificacaoSound").play();
-
-      // Mostra popup
-      let popup = document.getElementById("popup");
-      popup.classList.add("show");
-
-      // Esconde depois de 5s
-      setTimeout(() => {
-        popup.classList.remove("show");
-      }, 5000);
-    }
-
-    function restaurar() {
-      let temp = [...fila];
-      fila = [...filaAnterior]; // volta ao estado anterior
-      filaAnterior = [...temp]; // permite desfazer/alternar
-      renderizar();
-    }
-
-    renderizar();
-  </script>
+    </script>
 </body>
 </html>
